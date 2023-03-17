@@ -1,0 +1,233 @@
+---
+title: "Mini-Project1_380"
+author: "Darby Gluscevich-Kepner"
+date: "2023-03-16"
+output: html_document
+---
+
+## Front Matter
+
+```{r, message = FALSE, warning = FALSE}
+library(dplyr)
+library(ggplot2)
+library(readxl)
+```
+
+## Task 1
+
+```{r}
+CODGames <- read_excel("C:/Users/dglus/Downloads/CODGames2_mp.xlsx")
+```
+
+## Task 2
+
+```{r}
+str(CODGames)
+```
+
+The 6 variables that we have decided to use are TotalXP, Eliminations, Deaths, Score, Choice, and GameType
+
+### TotalXP: Quantitative
+
+#### Summary
+```{r}
+summary(CODGames$TotalXP)
+```
+
+
+#### # NA
+```{r}
+sum(is.na(CODGames$TotalXP))
+```
+
+
+#### Distribution
+```{r}
+ggplot(data = CODGames, aes(x = TotalXP)) +
+  geom_histogram()
+```
+
+The TotalXP appears to be a somewhat right-skewed normal distribution. The mean 
+XP is 11975, which is low when compared to the maximum value of 43816.
+
+### Eliminations: Quantitative
+
+#### Summary
+```{r}
+summary(CODGames$Eliminations)
+```
+
+
+#### # NA
+```{r}
+sum(is.na(CODGames$Eliminations))
+```
+
+
+#### Distribution
+```{r}
+ggplot(data = CODGames, aes(x = Eliminations)) +
+  geom_histogram()
+```
+
+The eliminations have a distribution that is somewhat normal. There are only so 
+many occurences. The eliminations that are higher are probably in smaller maps and the
+lower on larger maps. Other factors may be involved.
+
+
+### Deaths: Quantitative
+
+#### Summary
+```{r}
+summary(CODGames$Deaths)
+```
+
+
+#### # NA
+```{r}
+sum(is.na(CODGames$Deaths))
+```
+
+
+#### Distribution
+```{r}
+ggplot(data = CODGames, aes(x = Deaths)) +
+  geom_histogram()
+```
+
+Half deaths occurred between the 12 to 17.5 range. The mean was 14.98. One player 
+proved especially awful with 42 deaths.
+
+
+### Score: Quantitative
+
+#### Summary
+```{r}
+summary(CODGames$Score)
+```
+
+#### # NA
+```{r}
+sum(is.na(CODGames$Score))
+```
+
+
+#### Distribution
+```{r}
+ggplot(data = CODGames, aes(x = Score)) +
+  geom_histogram()
+```
+
+The score variable has zero NAs and it has a mean of 2945. The distribution has 
+a gaussian appearance to it, but it is not pretty. The maximum score is 7315, 
+while the minimum is 100.
+
+### Choice: Categorical
+
+#### Summary
+```{r}
+table(CODGames$Choice)
+```
+
+```{r}
+Map_Appearances <- 
+  CODGames %>%
+  group_by(Choice) %>%
+  summarise(Occurences = n()) %>%
+  arrange(desc(Occurences))
+
+head(Map_Appearances, 10)
+```
+#### # NA
+```{r}
+sum(is.na(CODGames$Choice))
+```
+
+#### Distribution
+```{r}
+ggplot(data = CODGames, aes(x = Choice)) +
+  geom_bar() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+```
+
+Rush, Crossroads Strike, and Diesel are the three maps that appears the most 
+with 15 appearances each. There is one case that appears as an NA.
+
+### Choice: Categorical
+
+#### Summary
+```{r}
+table(CODGames$GameType)
+```
+
+
+#### # NA
+```{r}
+sum(is.na(CODGames$GameType))
+```
+
+
+#### Distribution
+```{r}
+ggplot(data = CODGames, aes(x = GameType)) +
+  geom_bar() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+```
+
+There are a total of 211 games and 197 of them are team deathmatch. This game 
+type dominates the data.
+
+## Task 3
+
+ - What does the variable "Result" show? Is it different for each game type?
+  - It represents the score of the game, each game type has a different score that needs to be achieved for a team to win the game.
+```{r}
+CODGamesSep = CODGames %>% 
+  separate(Result, c("ResultCol1", "ResultCol2"), sep = "-") %>% 
+  group_by(GameType) %>% 
+  summarise(MaxResult = max(ResultCol1))
+```
+ 
+  
+ - What do the values in "GameType" stand for, and what is the difference between types?
+  
+ - What does the variable "FullPartial" mean?  
+ 
+## Task 4 - Question 1
+```{r}
+CODGames$month = format(as.Date(CODGames$Date, format="%Y/%m/%d"),"%m")
+CODGames$month = recode_factor(CODGames$month, '06' = "June", '07' = "July", '08' = "August")
+ggplot(data = CODGames, aes( y = TotalXP))+
+  geom_boxplot() +
+  facet_wrap(~ month)
+```
+
+Based on this side by side boxplot, we can see that the median total amount of xp gained for each game in each month is very similar, along with the Q1 and Q3 values for each month. To take a deeper dive into this relationship, we might also want to take a look at the variable XPType, which shows the boost towards how much xp is earned during that game. But, just based on the plot, we can conclude that the player's performance (quantified by xp gained per game) does not change over the months.
+
+## Task 4 - Question 2
+
+Which map chosen leads to the most eliminations, and what is the distribution of eliminations for all maps in the dataset? 
+```{r}
+Elim_Map_Data <- 
+  CODGames %>%
+  select(Choice, Eliminations)
+```
+
+```{r}
+Total_Elim_Data <- 
+  Elim_Map_Data %>%
+  group_by(Choice) %>%
+  summarise(TotalEliminations = sum(Eliminations)) %>%
+  arrange(desc(TotalEliminations))
+
+head(Total_Elim_Data, 8)
+```
+
+```{r}
+Elim_Map_Data %>% 
+  ggplot() +
+  geom_histogram(aes(x = Eliminations), bindwidth = 0.15, color = "black", fill = "blue") +
+  facet_wrap(Choice ~.) 
+```
+
+The most Eliminations occur at the Map Diesel in the data set.
